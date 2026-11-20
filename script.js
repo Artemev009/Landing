@@ -11,6 +11,16 @@ document.querySelectorAll(".reveal").forEach((element) => revealObserver.observe
 
 const scanLine = document.querySelector(".scan-line");
 if (scanLine) {
+  const reelGrid = scanLine.closest(".reel-grid");
+  const portrait = reelGrid.querySelector(".portrait");
+  const positionScan = () => {
+    const gridBounds = reelGrid.getBoundingClientRect();
+    const portraitBounds = portrait.getBoundingClientRect();
+    scanLine.style.setProperty("--scan-start", `${portraitBounds.top - gridBounds.top + 3}px`);
+    scanLine.style.setProperty("--scan-distance", `${Math.max(0, portraitBounds.height - 38)}px`);
+  };
+  positionScan();
+  new ResizeObserver(positionScan).observe(portrait);
   const scanLabels = [
     "Анализируем Reels",
     "Анализируем хук",
@@ -19,10 +29,12 @@ if (scanLine) {
     "Анализируем моушн-дизайн и визуальные хуки",
   ];
   let scanStep = 0;
-  scanLine.addEventListener("animationiteration", () => {
-    scanStep = (scanStep + 1) % scanLabels.length;
-    scanLine.querySelector("span").textContent = scanLabels[scanStep];
-  });
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    window.setInterval(() => {
+      scanStep = (scanStep + 1) % scanLabels.length;
+      scanLine.querySelector("span").textContent = scanLabels[scanStep];
+    }, 5000);
+  }
 }
 
 const finePointer = window.matchMedia("(pointer: fine)");
