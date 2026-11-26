@@ -1,3 +1,4 @@
+(() => {
 const tabs = [...document.querySelectorAll('.path-tabs [role="tab"]')];
 const slides = [...document.querySelectorAll('.path-slide')];
 const counter = document.querySelector('#slide-count');
@@ -42,3 +43,5 @@ if (!reducedMotion.matches) {
   slider.addEventListener('focusin', stopRotation, { once: true });
   slider.addEventListener('pointerenter', stopRotation, { once: true });
 }
+
+})();
