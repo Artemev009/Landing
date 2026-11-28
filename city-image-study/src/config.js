@@ -2,6 +2,7 @@
 export const EYE = 1.65;
 export const RADIUS = .28;
 export const OVERVIEW = {position:[36,29,44], target:[0,4.4,1], fov:37};
+export const INITIAL_OVERVIEW = {position:[0,26,59], target:[0,5,1], fov:37};
 export const EXHIBITS = [
  {id:'tiles',title:'Четыре плитки',subtitle:'Модульная система',x:-12,z:0,floor:3.2,w:7.6,d:6.4,h:6.6,view:[-12,3.2,5.4],target:[-12,6.1,0]},
  {id:'wave',title:'Волна',subtitle:'Пластика вычислений',x:-3,z:-6,floor:11.2,w:8.5,d:7,h:7,view:[-3,11.2,-.2],target:[-3,14,-6]},

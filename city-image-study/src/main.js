@@ -26,7 +26,7 @@ try{
   const inside=c.mode==='firstPerson';$('#mouse-lock').hidden=!inside;$('#walk-controls').hidden=!inside;$('#overview-controls').hidden=c.mode!=='overview';
   $('#caption-title').textContent=c.selected?.title||'Пространство для исследования';
   $('#caption-kicker').textContent=c.selected?.subtitle||'Выберите витрину, чтобы войти в цифровой город';
-  $('#hint').textContent=inside?(matchMedia('(max-width:800px)').matches?'Кнопки — движение · перетаскивание — обзор':'WASD — движение · перетаскивание — обзор · Esc — курсор'):c.mode==='overview'?'Перетаскивание — поворот города · колесо — расстояние':'Камера следует по безопасному маршруту. После прибытия можно идти самостоятельно.';
+  $('#hint').textContent=inside?(matchMedia('(max-width:800px)').matches?'Вверх и вниз — ходьба · влево и вправо — поворот · перетаскивание — обзор':'WASD — ходьба · стрелки влево и вправо — поворот · перетаскивание — обзор'):c.mode==='overview'?'Перетаскивание — поворот города · колесо — расстояние':'Камера следует по безопасному маршруту. После прибытия можно идти самостоятельно.';
   for(const b of document.querySelectorAll('[data-stop]'))b.setAttribute('aria-pressed',String(b.dataset.stop===c.selected?.id));
   if(!inside&&document.pointerLockElement)document.exitPointerLock();
  }

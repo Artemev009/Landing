@@ -1,6 +1,6 @@
 import * as T from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {EYE,ENTRY,OVERVIEW} from './config.js';
+import {EYE,ENTRY,OVERVIEW,INITIAL_OVERVIEW} from './config.js';
 import {moveFoot} from './navigation.js';
 const ease=t=>t*t*t*(t*(t*6-15)+10);
 const vec=a=>new T.Vector3(...a);
@@ -11,12 +11,12 @@ function lookQuaternion(position,target){return new T.Quaternion().setFromRotati
 export class CameraController{
  constructor(camera,canvas,navigation,onState){
   this.camera=camera;this.nav=navigation;this.onState=onState;this.mode='overview';this.phase='overview';this.foot=[...ENTRY];this.selected=null;this.queue=[];this.pending=null;this.yaw=0;this.pitch=0;
-  this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;this.overviewPosition=vec(OVERVIEW.position);
+  this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;this.overviewPosition=vec(INITIAL_OVERVIEW.position);this.initialOverview=true;
   this.orbit=new OrbitControls(camera,canvas);this.orbit.target.fromArray(OVERVIEW.target);this.orbit.enablePan=false;this.orbit.minDistance=38;this.orbit.maxDistance=105;this.orbit.minPolarAngle=.35;this.orbit.maxPolarAngle=1.38;this.orbit.enableDamping=true;
   this.setOverview();
  }
- setOverview(){this.camera.position.copy(this.overviewPosition);this.camera.fov=OVERVIEW.fov;this.camera.lookAt(vec(OVERVIEW.target));this.camera.updateProjectionMatrix();this.orbit.target.fromArray(OVERVIEW.target);this.orbit.update();}
- resize(aspect){const target=vec(OVERVIEW.target);this.overviewPosition.copy(vec(OVERVIEW.position).sub(target).multiplyScalar(Math.max(1,1.05/aspect)).add(target));this.orbit.maxDistance=Math.max(105,this.overviewPosition.distanceTo(target)+20);if(this.mode==='overview')this.setOverview();}
+ setOverview(){const view=this.initialOverview?INITIAL_OVERVIEW:OVERVIEW;this.camera.position.copy(this.overviewPosition);this.camera.fov=view.fov;this.camera.lookAt(vec(view.target));this.camera.updateProjectionMatrix();this.orbit.target.fromArray(view.target);this.orbit.update();}
+ resize(aspect){const view=this.initialOverview?INITIAL_OVERVIEW:OVERVIEW,target=vec(view.target);this.overviewPosition.copy(vec(view.position).sub(target).multiplyScalar(Math.max(1,1.05/aspect)).add(target));this.orbit.maxDistance=Math.max(105,this.overviewPosition.distanceTo(target)+20);if(this.mode==='overview')this.setOverview();}
  setReduced(value){this.reduced=value;if(value&&this.queue.length){const next=this.pending||(this.returning?'home':this.selected);this.queue=[];this.pending=null;this.returning=false;if(next==='home')this.home();else if(next)this.select(next);}}
  setState(mode,phase=mode){this.mode=mode;this.phase=phase;this.orbit.enabled=mode==='overview';this.onState?.(this);}
  select(exhibit){
@@ -38,11 +38,23 @@ export class CameraController{
   this.setState('transitioning',wasOverview?'approach':'walk');
  }
  enqueueWalk(route,exhibit=null){
-  for(let i=1;i<route.length;i++){
-   const a=route[i-1],b=route[i],distance=vec(a).distanceTo(vec(b));if(distance<.025)continue;
-   this.queue.push({kind:'walk',a,b,duration:Math.max(.16,distance/3.2),phase:Math.abs(a[1]-b[1])>.2?'stairs':'walk'});
-  }
+  const points=this.smoothRoute(route);
+  const distance=points.slice(1).reduce((sum,p,i)=>sum+vec(p).distanceTo(vec(points[i])),0);
+  if(distance>.025)this.queue.push({kind:'walk',points,duration:Math.max(.5,distance/3.2+.35),phase:'walk'});
   if(exhibit)this.queue.push({kind:'look',target:vec(exhibit.target),duration:1.05,phase:'arrive'});
+ }
+ smoothRoute(route){
+  const result=[route[0]];
+  for(let i=1;i<route.length-1;i++){
+   const previous=vec(route[i-1]),corner=vec(route[i]),next=vec(route[i+1]);
+   const before=corner.clone().lerp(previous,Math.min(.28,.65/corner.distanceTo(previous)));
+   const after=corner.clone().lerp(next,Math.min(.28,.65/corner.distanceTo(next)));
+   const curve=new T.QuadraticBezierCurve3(before,corner,after);
+   const samples=Array.from({length:9},(_,j)=>curve.getPoint(j/8).toArray());
+   const safe=this.nav.segmentSafe(result.at(-1),samples[0])&&samples.slice(1).every((p,j)=>this.nav.segmentSafe(samples[j],p))&&this.nav.segmentSafe(samples.at(-1),route[i+1]);
+   if(safe)result.push(...samples);else result.push(route[i]);
+  }
+  result.push(route.at(-1));return result;
  }
  home(){
   if(this.queue.length){
@@ -51,9 +63,11 @@ export class CameraController{
   }
   this.pending=null;
   if(this.mode==='overview'){
+   this.initialOverview=false;this.overviewPosition.copy(vec(OVERVIEW.position));
    this.queue.push({kind:'air',points:[this.camera.position.clone(),this.overviewPosition.clone()],target:vec(OVERVIEW.target),fromFov:this.camera.fov,toFov:OVERVIEW.fov,duration:1.3,phase:'returning'});
   }else if(!this.reduced){
    this.enqueueWalk(this.nav.route(this.foot,ENTRY));
+   this.initialOverview=false;this.overviewPosition.copy(vec(OVERVIEW.position));
    this.queue.push({kind:'air',points:[eyes(ENTRY),new T.Vector3(3,10,24),new T.Vector3(22,24,29),this.overviewPosition.clone()],target:vec(OVERVIEW.target),fromFov:70,toFov:OVERVIEW.fov,duration:4,phase:'returning'});
   }
   if(this.reduced){this.queue=[];this.selected=null;this.setOverview();this.setState('overview');return;}
@@ -63,8 +77,8 @@ export class CameraController{
   segment.elapsed=0;segment.q=this.camera.quaternion.clone();segment.startPos=this.camera.position.clone();
   if(segment.kind==='air'){segment.curve=new T.CatmullRomCurve3(segment.points,false,'centripetal');}
   if(segment.kind==='walk'){
-   const a=eyes(segment.a),b=eyes(segment.b),target=b.clone().add(b.clone().sub(a).setY(0).normalize().multiplyScalar(2));target.y=b.y;
-   segment.endQ=lookQuaternion(a,target);
+   segment.lengths=[0];for(let i=1;i<segment.points.length;i++)segment.lengths.push(segment.lengths.at(-1)+vec(segment.points[i]).distanceTo(vec(segment.points[i-1])));
+   segment.distance=segment.lengths.at(-1);
   }
   if(segment.kind==='look')segment.endQ=lookQuaternion(this.camera.position,segment.target);
   this.phase=segment.phase;this.onState?.(this);
@@ -77,10 +91,20 @@ export class CameraController{
     this.camera.quaternion.slerpQuaternions(s.q,lookQuaternion(this.camera.position,s.target),u);
     this.camera.fov=T.MathUtils.lerp(s.fromFov,s.toFov,u);this.camera.updateProjectionMatrix();
    }else if(s.kind==='walk'){
-    // Constant progress on each validated segment. Height follows the same ramp as manual walking.
-    this.foot=s.a.map((a,i)=>a+(s.b[i]-a)*t);
-    this.camera.position.copy(eyes(this.foot));
-    this.camera.quaternion.slerpQuaternions(s.q,s.endQ,ease(Math.min(1,t*2.2)));
+    const progress=t<.1?5*t*t/.9:t>.9?(.9-5*(1-t)*(1-t))/.9:(t-.05)/.9;
+    const sample=distance=>{
+     const found=s.lengths.findIndex(length=>length>=distance);
+     const index=found<0?s.lengths.length-1:Math.max(1,found);
+     const start=s.lengths[index-1],end=s.lengths[index];
+     return vec(s.points[index-1]).lerp(vec(s.points[index]),end>start?(distance-start)/(end-start):0);
+    };
+    const distance=s.distance*progress;
+    this.foot=sample(distance).toArray();this.camera.position.copy(eyes(this.foot));
+    const ahead=eyes(sample(Math.min(s.distance,distance+1.5)));
+    if(ahead.distanceToSquared(this.camera.position)>.01){
+     const target=lookQuaternion(this.camera.position,ahead);
+     this.camera.quaternion.slerp(target,1-Math.exp(-dt*4.5));
+    }
    }else this.camera.quaternion.slerpQuaternions(s.q,s.endQ,u);
    if(t>=1){this.queue.shift();
     // During an aerial approach defer new requests only until we reach the safe entry.
@@ -96,6 +120,7 @@ export class CameraController{
   }
   if(this.mode==='overview'){this.orbit.update();return;}
   if(!input)return;
+  this.yaw-=input.turn()*dt*1.55;
   const dir=input.motion(),speed=input.fast?4.2:2.3;
   if(Math.hypot(dir.x,dir.z)>.01){
    const length=Math.max(1,Math.hypot(dir.x,dir.z));

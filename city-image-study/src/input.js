@@ -28,6 +28,7 @@ export class InputManager{
    for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,()=>this.buttons.delete(button.dataset.move),opts);
   }
  }
- motion(){const has=(key,arrow,button)=>this.keys.has(key)||this.keys.has(arrow)||this.buttons.has(button);return {x:Number(has('KeyD','ArrowRight','right'))-Number(has('KeyA','ArrowLeft','left')),z:Number(has('KeyS','ArrowDown','back'))-Number(has('KeyW','ArrowUp','forward'))};}
+ motion(){const has=(key,arrow,button)=>this.keys.has(key)||this.keys.has(arrow)||this.buttons.has(button);return {x:Number(this.keys.has('KeyD'))-Number(this.keys.has('KeyA')),z:Number(has('KeyS','ArrowDown','back'))-Number(has('KeyW','ArrowUp','forward'))};}
+ turn(){return Number(this.keys.has('ArrowRight')||this.buttons.has('right'))-Number(this.keys.has('ArrowLeft')||this.buttons.has('left'));}
  dispose(){this.abort.abort();}
 }
