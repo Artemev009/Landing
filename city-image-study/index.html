@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090810"><title>Внутри цифрового города — 3D-мир</title><link rel="stylesheet" href="style.css"><script src="dist/world.js" defer></script></head>
+<body><main>
+ <header><div><p class="eyebrow">Digital city · пространственный этюд</p><h1>Внутри цифрового города</h1></div><p class="intro">Пять экспонатов. Одно пространство.</p></header>
+ <section class="viewer" id="viewer" aria-label="Интерактивный трёхмерный город">
+  <canvas id="world" tabindex="0" aria-label="3D-город. Выберите витрину кнопками ниже. Внутри: WASD — движение, перетаскивание — обзор."></canvas>
+  <div class="top-bar"><span id="view-label">Загрузка мира…</span><div class="actions"><button id="mouse-lock" hidden>Обзор мышью</button><button id="reset">Весь город</button></div></div>
+  <div class="caption"><p id="caption-kicker">Выберите витрину, чтобы войти в цифровой город</p><h2 id="caption-title">Пространство для исследования</h2></div>
+  <div class="walk-controls" id="walk-controls" hidden aria-label="Движение по городу"><button data-move="forward" aria-label="Идти вперёд">↑</button><div><button data-move="left" aria-label="Шаг влево">←</button><button data-move="back" aria-label="Идти назад">↓</button><button data-move="right" aria-label="Шаг вправо">→</button></div></div>
+  <div class="overview-controls" id="overview-controls"><button id="zoom-out" aria-label="Отдалить общий вид">−</button><button id="zoom-in" aria-label="Приблизить общий вид">+</button></div>
+  <p class="error" id="error" hidden></p><div class="loading" id="loading">Создаём пространство<span></span></div>
+ </section>
+ <nav class="stops" aria-label="Витрины города">
+  <button data-stop="tiles" aria-pressed="false"><span class="icon">▦</span><span>Четыре плитки</span></button>
+  <button data-stop="wave" aria-pressed="false"><span class="icon">∿</span><span>Волна</span></button>
+  <button data-stop="chart" aria-pressed="false"><span class="icon">▥</span><span>Диаграмма</span></button>
+  <button data-stop="layers" aria-pressed="false"><span class="icon">≋</span><span>Три пластины</span></button>
+  <button data-stop="sphere" aria-pressed="false"><span class="icon">○</span><span>Сфера</span></button>
+ </nav>
+ <footer><p id="hint" role="status">Перетаскивание — поворот города · колесо — расстояние</p><div class="settings"><label>Графика <select id="quality"><option value="auto">Авто</option><option value="high">Высокая</option><option value="low">Лёгкая</option></select></label><label><input id="reduce" type="checkbox"> Без пролётов</label><a href="city-original.png" target="_blank" rel="noopener">Референс</a></div></footer>
+ <output id="telemetry" hidden></output>
+</main><noscript>Для интерактивного 3D-города нужен JavaScript. <a href="city-original.png">Посмотреть исходный референс</a>.</noscript></body></html>

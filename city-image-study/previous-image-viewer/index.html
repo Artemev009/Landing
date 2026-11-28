@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Цифровой город — исследование оригинала</title>
+<link rel="stylesheet" href="style.css">
+<script src="viewer.js" defer></script>
+</head>
+<body>
+<main>
+  <header><div><p class="eyebrow">Интерактивный этюд</p><h1>Внутри цифрового города</h1></div><p class="intro">Выберите витрину и рассмотрите её ближе.</p></header>
+  <section class="viewer" id="viewer" tabindex="0" aria-label="Цифровой город. Выберите витрину, перетаскивайте изображение или используйте кнопки масштаба.">
+    <div class="image-layer" id="image-layer"><img src="city-original.png" width="1536" height="1024" alt="Детализированный цифровой город из графитовых зданий, стеклянных витрин, лестниц и зелёной световой реки" draggable="false"></div>
+    <div class="hotspots" id="hotspots"></div>
+    <div class="top-bar"><span class="view-label" id="view-label">Общий вид</span><button class="reset" id="reset" type="button">Весь город</button></div>
+    <div class="caption" aria-live="polite"><span id="caption-kicker">Начните с любой витрины</span><h2 id="caption-title">Каждая деталь — ближе</h2></div>
+    <div class="zoom-controls" aria-label="Масштаб"><button type="button" id="zoom-out" aria-label="Отдалить">−</button><output id="zoom-value">1×</output><button type="button" id="zoom-in" aria-label="Приблизить">+</button></div>
+    <p class="error" id="error" hidden>Не удалось загрузить изображение города. Обновите страницу.</p>
+  </section>
+  <nav class="stops" aria-label="Витрины города">
+    <button type="button" data-stop="tiles"><span class="icon">▦</span><span>Четыре плитки</span></button>
+    <button type="button" data-stop="wave"><span class="icon">∿</span><span>Волна</span></button>
+    <button type="button" data-stop="chart"><span class="icon">▥</span><span>Диаграмма</span></button>
+    <button type="button" data-stop="layers"><span class="icon">≋</span><span>Три пластины</span></button>
+    <button type="button" data-stop="sphere"><span class="icon">○</span><span>Сфера</span></button>
+  </nav>
+  <footer><p>Колесо — масштаб · перетаскивание — осмотр · Esc — общий вид</p><span>Оригинальный рендер · интерактивное приближение</span></footer>
+</main>
+</body>
+</html>

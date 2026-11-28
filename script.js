@@ -1,102 +1,44 @@
-const revealObserver = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add("visible");
-      revealObserver.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.12 });
-
-document.querySelectorAll(".reveal").forEach((element) => revealObserver.observe(element));
-
-const scanLine = document.querySelector(".scan-line");
-if (scanLine) {
-  const reelGrid = scanLine.closest(".reel-grid");
-  const portrait = reelGrid.querySelector(".portrait");
-  const positionScan = () => {
-    const gridBounds = reelGrid.getBoundingClientRect();
-    const portraitBounds = portrait.getBoundingClientRect();
-    scanLine.style.setProperty("--scan-start", `${portraitBounds.top - gridBounds.top + 3}px`);
-    scanLine.style.setProperty("--scan-distance", `${Math.max(0, portraitBounds.height - 38)}px`);
-  };
-  positionScan();
-  new ResizeObserver(positionScan).observe(portrait);
-  const scanLabels = [
-    "Анализируем Reels",
-    "Анализируем хук",
-    "Анализируем основной сценарий",
-    "Анализируем call to action",
-    "Анализируем моушн-дизайн и визуальные хуки",
-  ];
-  let scanStep = 0;
-  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    window.setInterval(() => {
-      scanStep = (scanStep + 1) % scanLabels.length;
-      scanLine.querySelector("span").textContent = scanLabels[scanStep];
-    }, 5000);
-  }
-}
-
+const cards = [...document.querySelectorAll(".concept-card:not(.concept-card--city)")];
 const finePointer = window.matchMedia("(pointer: fine)");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
+function resetTilt(card) {
+  card.style.setProperty("--tilt-x", "0deg");
+  card.style.setProperty("--tilt-y", "0deg");
+}
+
 if (finePointer.matches && !reducedMotion.matches) {
-  document.querySelectorAll(".project-stage").forEach((stage) => {
-    stage.addEventListener("pointermove", (event) => {
-      const rect = stage.getBoundingClientRect();
-      const x = (event.clientX - rect.left) / rect.width - 0.5;
-      const y = (event.clientY - rect.top) / rect.height - 0.5;
-      stage.style.transform = `perspective(1200px) rotateX(${y * -2.2}deg) rotateY(${x * 2.2}deg)`;
+  cards.forEach((card) => {
+    card.addEventListener("pointermove", (event) => {
+      const bounds = card.getBoundingClientRect();
+      const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+      const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+      card.style.setProperty("--tilt-x", (y * -3.2).toFixed(2) + "deg");
+      card.style.setProperty("--tilt-y", (x * 3.2).toFixed(2) + "deg");
     });
-    stage.addEventListener("pointerleave", () => {
-      stage.style.transform = "perspective(1200px) rotateX(0) rotateY(0)";
-    });
+    card.addEventListener("pointerleave", () => resetTilt(card));
   });
 }
 
-document.querySelectorAll(".github-link").forEach((link) => {
-  link.addEventListener("pointermove", (event) => {
-    if (!finePointer.matches || reducedMotion.matches) return;
-    const rect = link.getBoundingClientRect();
-    const x = event.clientX - rect.left - rect.width / 2;
-    const y = event.clientY - rect.top - rect.height / 2;
-    link.style.transform = `translate(${x * 0.05}px, ${y * 0.08}px)`;
+function toggleCard(card) {
+  cards.forEach((item) => {
+    if (item !== card) item.classList.remove("is-active");
   });
-  link.addEventListener("pointerleave", () => {
-    link.style.transform = "";
+  card.classList.toggle("is-active");
+  const status = card.querySelector(".concept-status");
+  status.textContent = card.classList.contains("is-active")
+    ? "СЦЕНА ЗАРЕЗЕРВИРОВАНА"
+    : status.dataset.label;
+}
+
+cards.forEach((card) => {
+  const status = card.querySelector(".concept-status");
+  status.dataset.label = status.textContent;
+  card.addEventListener("click", () => toggleCard(card));
+  card.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleCard(card);
+    }
   });
 });
-
-const bookingWidget = document.querySelector(".booking-widget");
-
-if (bookingWidget) {
-  const dateButtons = [...bookingWidget.querySelectorAll("[data-day]")];
-  const timeButtons = [...bookingWidget.querySelectorAll("[data-time]")];
-  const confirmButton = bookingWidget.querySelector(".booking-action");
-  const confirmation = bookingWidget.querySelector(".booking-confirm");
-
-  function selectOption(buttons, selected) {
-    buttons.forEach((button) => {
-      const active = button === selected;
-      button.classList.toggle("selected", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
-    confirmation.hidden = true;
-    confirmButton.hidden = false;
-    const hasTime = timeButtons.some((button) => button.classList.contains("selected"));
-    confirmButton.disabled = !hasTime;
-    confirmButton.textContent = hasTime ? "Подтвердить бронь" : "Выберите время";
-  }
-
-  dateButtons.forEach((button) => {
-    button.addEventListener("click", () => selectOption(dateButtons, button));
-  });
-  timeButtons.forEach((button) => {
-    button.addEventListener("click", () => selectOption(timeButtons, button));
-  });
-  confirmButton.addEventListener("click", () => {
-    if (confirmButton.disabled) return;
-    confirmButton.hidden = true;
-    confirmation.hidden = false;
-  });
-}

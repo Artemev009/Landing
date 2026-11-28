@@ -2,3 +2,5 @@
 Thumbs.db
 *.log
 preview.cjs
+3d-digital-city/node_modules/
+city-image-study/node_modules/
